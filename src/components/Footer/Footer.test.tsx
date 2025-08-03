@@ -24,7 +24,8 @@ describe('Footer', () => {
     expect(screen.getByText('Home')).toBeInTheDocument()
     expect(screen.getByText('About')).toBeInTheDocument()
     expect(screen.getByText('Services')).toBeInTheDocument()
-    expect(screen.getByText('Contact')).toBeInTheDocument()
+    // Use getAllByText to handle multiple "Contact" elements
+    expect(screen.getAllByText('Contact')).toHaveLength(2)
   })
 
   it('renders social media links', () => {
