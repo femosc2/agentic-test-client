@@ -83,7 +83,8 @@ export async function stageAll(workingDir: string): Promise<GitResult> {
 }
 
 export async function commit(message: string, workingDir: string): Promise<GitResult> {
-  return runCommand('git', ['commit', '-m', message], workingDir)
+  // Quote the message to handle spaces properly with shell: true
+  return runCommand('git', ['commit', '-m', `"${message}"`], workingDir)
 }
 
 export async function getCommitHash(workingDir: string): Promise<GitResult> {

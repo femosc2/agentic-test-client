@@ -1,4 +1,7 @@
 import { spawn } from 'child_process'
+import { writeFileSync, unlinkSync } from 'fs'
+import { join } from 'path'
+import { tmpdir } from 'os'
 import type { Task } from '../types/task'
 
 export interface ExecutionResult {
@@ -12,6 +15,7 @@ export async function executeTask(
   workingDir: string
 ): Promise<ExecutionResult> {
   return new Promise((resolve) => {
+    // Build prompt
     let prompt = task.title
     if (task.description) {
       prompt += `\n\nAdditional instructions: ${task.description}`
@@ -21,14 +25,19 @@ export async function executeTask(
     console.log(`[TaskExecutor] Working directory: ${workingDir}`)
     console.log(`[TaskExecutor] Prompt: ${prompt}\n`)
 
-    // On Windows, use cmd /c to run claude
-    const isWindows = process.platform === 'win32'
-    console.log(`[TaskExecutor] Platform: ${process.platform}`)
+    // Write prompt to a temp file to avoid shell escaping issues
+    const tempFile = join(tmpdir(), `claude-prompt-${Date.now()}.txt`)
+    writeFileSync(tempFile, prompt, 'utf-8')
+    console.log(`[TaskExecutor] Wrote prompt to: ${tempFile}`)
 
-    const args = ['-p', '--dangerously-skip-permissions', prompt]
-    console.log(`[TaskExecutor] Running: claude ${args.slice(0, 2).join(' ')} "<prompt>"`)
+    // Read prompt from file using shell redirection
+    const command = process.platform === 'win32'
+      ? `type "${tempFile}" | claude -p --dangerously-skip-permissions`
+      : `cat "${tempFile}" | claude -p --dangerously-skip-permissions`
 
-    const claude = spawn('claude', args, {
+    console.log(`[TaskExecutor] Running command via stdin pipe...`)
+
+    const claude = spawn(command, [], {
       cwd: workingDir,
       shell: true,
       env: {
@@ -53,6 +62,13 @@ export async function executeTask(
     })
 
     claude.on('close', (code) => {
+      // Clean up temp file
+      try {
+        unlinkSync(tempFile)
+      } catch {
+        // Ignore cleanup errors
+      }
+
       console.log(`\n[TaskExecutor] Claude Code exited with code: ${code}`)
 
       if (code === 0) {
@@ -67,6 +83,13 @@ export async function executeTask(
     })
 
     claude.on('error', (err) => {
+      // Clean up temp file
+      try {
+        unlinkSync(tempFile)
+      } catch {
+        // Ignore cleanup errors
+      }
+
       console.error(`[TaskExecutor] Failed to start Claude Code:`, err)
       resolve({
         success: false,
