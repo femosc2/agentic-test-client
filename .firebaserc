@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "agentic-tasks"
+  },
+  "targets": {
+    "agentic-tasks": {
+      "hosting": {
+        "agentic-client": [
+          "agentic-client"
+        ]
+      }
+    }
+  }
+}
