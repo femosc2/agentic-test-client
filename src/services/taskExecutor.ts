@@ -3,6 +3,7 @@ import { writeFileSync, unlinkSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import type { Task } from '../types/task'
+import { SAFETY_RULES, validateTaskSafety } from '../agent/safetyRules'
 
 export interface ExecutionResult {
   success: boolean
@@ -14,16 +15,29 @@ export async function executeTask(
   task: Task,
   workingDir: string
 ): Promise<ExecutionResult> {
-  return new Promise((resolve) => {
-    // Build prompt
-    let prompt = task.title
-    if (task.description) {
-      prompt += `\n\nAdditional instructions: ${task.description}`
+  // Pre-validate task against dangerous patterns
+  const safetyError = validateTaskSafety(task.title, task.description)
+  if (safetyError) {
+    console.error(`[TaskExecutor] Task rejected for safety: ${safetyError}`)
+    return {
+      success: false,
+      output: '',
+      error: `Task rejected: ${safetyError}`,
     }
+  }
+
+  return new Promise((resolve) => {
+    // Build prompt with safety rules prepended
+    let taskContent = task.title
+    if (task.description) {
+      taskContent += `\n\nAdditional instructions: ${task.description}`
+    }
+
+    const prompt = SAFETY_RULES + taskContent
 
     console.log(`\n[TaskExecutor] Starting task: ${task.title}`)
     console.log(`[TaskExecutor] Working directory: ${workingDir}`)
-    console.log(`[TaskExecutor] Prompt: ${prompt}\n`)
+    console.log(`[TaskExecutor] Task content: ${taskContent}\n`)
 
     // Write prompt to a temp file to avoid shell escaping issues
     const tempFile = join(tmpdir(), `claude-prompt-${Date.now()}.txt`)

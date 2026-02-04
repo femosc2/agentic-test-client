@@ -114,7 +114,7 @@ export interface GitWorkflowResult {
 
 export async function executeGitWorkflow(
   taskId: string,
-  taskTitle: string,
+  _taskTitle: string,
   workingDir: string
 ): Promise<GitWorkflowResult> {
   const branchName = `task/${taskId}`
