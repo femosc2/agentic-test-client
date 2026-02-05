@@ -40,3 +40,12 @@
 .read-the-docs {
   color: #888;
 }
+
+.test-banner {
+  color: #4caf50;
+  font-weight: bold;
+  padding: 0.5rem 1rem;
+  border: 2px solid #4caf50;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
