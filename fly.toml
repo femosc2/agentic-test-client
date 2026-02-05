@@ -1,0 +1,19 @@
+app = "agentic-task-agent"
+primary_region = "ams"
+
+[build]
+  dockerfile = "Dockerfile.agent"
+
+[env]
+  NODE_ENV = "production"
+  AGENT_WORKING_DIR = "/workspace/repo"
+  AGENT_POLL_INTERVAL = "30000"
+
+[mounts]
+  source = "workspace_data"
+  destination = "/workspace"
+
+[[vm]]
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1
